@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Act This Page</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+        font-family: "Arial", sans-serif;
+      }
+      #title {
+        font-size: 36px;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      #description {
+        font-size: 18px;
+        color: #666;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      #round {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+        margin-bottom: 20px;
+        background-color: #fff;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      #panels {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 1200px;
+      }
+      #leftPanel,
+      #rightPanel {
+        flex: 1;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        margin: 20px;
+      }
+      #countdown {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      #video {
+        width: 100%;
+        max-width: 600px;
+        border: 2px solid #333;
+      }
+      #resetBtn,
+      #captureBtn {
+        padding: 10px;
+        font-size: 18px;
+        cursor: pointer;
+        margin-top: 10px;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+      }
+      #randomImage {
+        max-width: 100%;
+        max-height: 300px;
+        border: 2px solid #333;
+        margin-top: 10px;
+      }
+      #scorePanel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+      }
+      .scoreElement {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #4caf50;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 5px;
+      }
+      #finalScore {
+        font-size: 24px;
+        margin-top: 20px;
+      }
+      #startAgainBtn {
+        padding: 10px;
+        font-size: 18px;
+        cursor: pointer;
+        margin-top: 10px;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="title">Act This Page</div>
+    <div id="description">
+      Get ready to resemble the image shown on the left! The game consists of 3
+      rounds, and your final score will consist of how close your interpretation
+      is!
+    </div>
+
+    <div id="panels">
+      <div id="leftPanel">
+        <div id="round"></div>
+        <img id="randomImage" alt="Random Image" />
+      </div>
+      <div id="rightPanel">
+        <div id="countdown">Waiting...</div>
+        <video id="video" autoplay></video>
+        <button id="resetBtn" onclick="resetCountdown()">Ready!</button>
+      </div>
+    </div>
+
+    <div id="scorePanel">
+      <div class="scoreElement" id="first">10%</div>
+      <div class="scoreElement" id="second">25%</div>
+      <div class="scoreElement" id="third">32%</div>
+      <div id="finalScore"></div>
+      <button id="startAgainBtn" onclick="startAgain()">Start Again</button>
+    </div>
+
+    <div id="description">Developed by: Mauricio Vargas</div>
+
+    <script>
+      const images = [
+        "images/harrypotter-og.png",
+        "images/lalaland-og.png",
+        "images/msdoubtfire-og.png",
+        "images/starwars-og.png",
+        "images/taxidriver-og.png",
+        "images/theshowman-og.png",
+        "images/titanic-og.png",
+      ];
+
+      let countdownElement = document.getElementById("countdown");
+      let videoElement = document.getElementById("video");
+      let resetBtn = document.getElementById("resetBtn");
+      let randomImageDiv = document.getElementById("randomImage");
+      let roundElement = document.getElementById("round");
+      let scorePanel = document.getElementById("scorePanel");
+      let scoreFirst = document.getElementById("first");
+      let scoreSecond = document.getElementById("second");
+      let scoreThird = document.getElementById("third");
+      let finalScoreElement = document.getElementById("finalScore");
+      let countdown = 5;
+      let round = 1;
+      let imageSelected = 0;
+      let similarity = [];
+
+      function updateCountdown() {
+        countdownElement.textContent = `Capturing in ${countdown} seconds...`;
+      }
+
+      function startCountdown() {
+        resetBtn.disabled = true;
+        updateCountdown();
+        let countdownInterval = setInterval(function () {
+          countdown--;
+          updateCountdown();
+          if (countdown === 0) {
+            clearInterval(countdownInterval);
+            resetBtn.disabled = false;
+            captureImage();
+          }
+        }, 1000);
+      }
+
+      function captureImage() {
+        let canvas = document.createElement("canvas");
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        canvas
+          .getContext("2d")
+          .drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+        let dataURL = canvas.toDataURL("image/png");
+        let formData = new FormData();
+
+        async function fetchData() {
+          try {
+            let response = await fetch(dataURL);
+            let blob = await response.blob();
+            readFile(blob);
+            formData.append("file_1", blob, "input.png");
+
+            let realRound = round;
+            let secondImageResponse = await fetch(
+              "http://127.0.0.1:8001/predict?file_2=" +
+                imageSelected +
+                "&file_number=" +
+                realRound,
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+            let data = await secondImageResponse.json();
+            console.log("Prediction response:", data.similarity);
+            similarity.push(Math.round(data.similarity * 100, 2));
+            round++;
+            roundElement.textContent = `Round ${round}`;
+
+            if (round <= 3) {
+              countdown = 5;
+              updateCountdown();
+            } else {
+              showFinalScore();
+            }
+          } catch (error) {
+            console.error("Error:", error);
+          }
+        }
+
+        // Call the asynchronous function
+        fetchData();
+
+        // fetch(dataURL)
+        //   .then((response) => response.blob())
+        //   .then((blob) => {
+        //     readFile(blob);
+        //     // const file = new File([blob], "image", { type: blob.type });
+        //     // console.log(file);
+        //     formData.append("file_1", blob, "input.png");
+
+        //     let realRound = round - 1;
+        //     fetch(
+        //       "http://127.0.0.1:8001/predict?file_2=" +
+        //         imageSelected +
+        //         "&file_number=" +
+        //         realRound,
+        //       {
+        //         method: "POST",
+        //         body: formData,
+        //       }
+        //     )
+        //       .then((response) => response.json())
+        //       .then((data) => {
+        //         console.log("Prediction response:", data.similarity);
+        //         similarity.push(Math.round(data.similarity * 100, 2));
+        //       })
+        //       .catch((error) => {
+        //         console.error("Error sending prediction request:", error);
+        //       });
+        //   });
+
+        // round++;
+        // roundElement.textContent = `Round ${round}`;
+
+        // if (round <= 3) {
+        //   countdown = 5;
+        //   updateCountdown();
+        // } else {
+        //   showFinalScore();
+        // }
+
+        // let downloadLink = document.createElement("a");
+        // downloadLink.href = imageDataURL;
+        // downloadLink.download = "captured_image.png";
+
+        // downloadLink.click();
+
+        //updateRandomImage();
+      }
+
+      async function getImageBlob() {
+        let response = await fetch(randomImageDiv.src);
+        let blob = await response.blob();
+        return blob;
+      }
+
+      function readFile(input) {
+        const fr = new FileReader();
+        fr.readAsDataURL(input);
+        fr.addEventListener("load", function () {
+          console.log(fr.result);
+        });
+      }
+
+      function resetCountdown() {
+        countdown = 5;
+        startCountdown();
+        roundElement.textContent = `Round ${round}`;
+        updateRandomImage();
+      }
+
+      function showFinalScore() {
+        document.getElementById("panels").style.display = "none";
+        scorePanel.style.display = "flex";
+        console.log(similarity);
+        scoreFirst.textContent = similarity[0];
+        scoreSecond.textContent = similarity[1];
+        scoreThird.textContent = similarity[2];
+        // finalScore is the mean of the similarity scores
+        let finalScore = Math.round(
+          (similarity[0] + similarity[1] + similarity[2]) / 3,
+          2
+        );
+        finalScoreElement.textContent = `Final Score: ${finalScore}%`;
+      }
+
+      function startAgain() {
+        round = 1;
+        roundElement.textContent = `Round ${round}`;
+        countdown = 5;
+        updateCountdown();
+
+        document.getElementById("panels").style.display = "flex";
+        scorePanel.style.display = "none";
+        startCountdown();
+
+        similarity = [];
+      }
+
+      function updateRandomImage() {
+        const randomIndex = Math.floor(Math.random() * images.length);
+        imageSelected = randomIndex;
+        randomImage.src = images[randomIndex];
+      }
+
+      scorePanel.style.display = "none";
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then(function (stream) {
+          roundElement.textContent = `Round ${round}`;
+          videoElement.srcObject = stream;
+          videoElement.play();
+          updateRandomImage();
+          startCountdown();
+        })
+        .catch(function (error) {
+          console.error("Error accessing camera:", error);
+        });
+    </script>
+  </body>
+</html>
