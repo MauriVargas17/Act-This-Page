@@ -51,6 +51,7 @@ process_type = {"resize": ImageProcessor(function=resize_and_save, output_path=I
 def process_images(type: Type_Enum=Type_Enum.RESIZE):
     process = process_type[type]
     process_function = process.function
+    shape = ""
     if os.path.exists(IMAGE_FOLDER):
         for filename in os.listdir(IMAGE_FOLDER):
             if filename.endswith(('.jpg', '.jpeg', '.png')) and not filename.startswith('resized_'):
@@ -60,7 +61,10 @@ def process_images(type: Type_Enum=Type_Enum.RESIZE):
                 image = cv2.imread(input_path)
                 processed_image = process_function(image, output_path)
                 
-                print(f"{process.message} and saved {filename} ({processed_image.shape})")
+                print(f"{process.message} and saved {filename} {processed_image.shape}")
+                if filename.startswith("input"):
+                    shape = processed_image.shape
+        return shape
     else:
         print(f"Folder {IMAGE_FOLDER} does not exist.")
 
