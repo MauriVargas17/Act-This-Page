@@ -35,6 +35,6 @@ class Comparator:
                 similarity=np.round(similarity, 4),
                 image_1_embedding=first_embedding_result.embeddings[0].embedding,
                 image_2_embedding=second_embedding_result.embeddings[0].embedding,
-                time_ms=np.round(final_time - initial_time, 2)
+                time_ms=np.round((final_time - initial_time) * 1000, 2)
             )
         return result
