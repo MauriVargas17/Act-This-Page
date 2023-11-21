@@ -4,6 +4,7 @@ from enum import Enum
 class StatusResponse(BaseModel):
     status: str
     model_name: str
+    description: str
 
 class PredictionType(str, Enum):
     DETECTION = "detection"

@@ -107,7 +107,7 @@ def read_root():
     return {"message": "Hello, CORS is enabled"}
 @app.get("/status")
 async def status():
-    return StatusResponse(status="ok", model_name=SETTINGS.name_of_model)
+    return StatusResponse(status="ok", description="Service for image comparison through embedding", model_name=SETTINGS.name_of_model)
 
 @app.get('/reports-json')
 async def reports_json():
@@ -118,7 +118,6 @@ async def export_csv():
     if not entries:
         raise HTTPException(status_code=404, detail="No data available")
 
-    # Convert entries to CSV format
     csv_data = StringIO()
     csv_writer = csv.DictWriter(
         csv_data,
